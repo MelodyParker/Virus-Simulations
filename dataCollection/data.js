@@ -1,13 +1,14 @@
 class Data {
   constructor() {
-    this.frames = [];
+    this.frames = [{numPeople: numPeople}];
     this.downloadBtn = document.getElementById("download");
   }
 
   addFrame(people) {
     let newFrame = [];
     for (let person of people) {
-      newFrame.push(person.data())
+      let personData = person.data();
+      if (personData) newFrame.push(personData)
     }
     this.frames.push(newFrame)
   }

@@ -36,9 +36,18 @@ class Person {
       if (!paused) {
           if (this.isInfected) {
               this.frames_since_infection ++;
-              if (this.frames_since_infection > this.frames_until_healed) {this.isInfected = false; this.frames_since_healed = 0;}
-              if (this.will_die) {
-                  this.frames_until_death --;
+              if (this.frames_since_infection > this.frames_until_healed) {this.isInfected = false; this.seriouslyIll = false; this.isHospitalized 
+= false; this.beingUnhospitalized = true; this.frames_since_healed = 0;}
+              if (this.seriouslyIll) {
+                if (this.isHospitalized) {
+                  if (this.willDieIfTreated) {
+                    this.frames_until_death --;
+                  }
+                } else {
+                  if (this.willDieIfNotTreated) {
+                    this.frames_until_death --;
+                  }
+                }
               }
           }
           else {
@@ -60,26 +69,26 @@ class Person {
   isImmune() {
     return (this.frames_since_healed <= immuneFrames);
   }
-  show(sketch) {
-    sketch.ellipse(0, 0, 5, 5)
+  show() {
+    this.sketch.ellipse(0, 0, 5, 5)
       if (this.isInfected) {
-          sketch.fill(255, 0, 0, 100);
-          sketch.ellipse(this.x, this.y, transmissionRange*2, transmissionRange*2)
+          this.sketch.fill(255, 0, 0, 100);
+          this.sketch.ellipse(this.x, this.y, transmissionRange*2, transmissionRange*2)
       } 
       
-      sketch.fill(healthyColor);
-      if (this.frames_since_healed < immuneFrames) sketch.fill(immuneColor);
-    if (this.isInfected) sketch.fill(infectedColor)
-    else if (this.seriouslyIll) sketch.fill(seriouslyIllColor);
-      sketch.ellipse(this.x, this.y, 5, 5);
+      this.sketch.fill(healthyColor);
+      if (this.frames_since_healed < immuneFrames) this.sketch.fill(immuneColor);
+    if (this.isInfected) this.sketch.fill(infectedColor)
+    else if (this.seriouslyIll) this.sketch.fill(seriouslyIllColor);
+      this.sketch.ellipse(this.x, this.y, 5, 5);
   }
-  wallCollision(sketch) {
-    if (this.x - 2.5 < 0 || this.x + 2.5 > sketch.width) this.xMult *= -1;
-    if (this.y - 2.5 < 0 || this.y + 2.5 > sketch.height) this.yMult *= -1;
+  wallCollision() {
+    if (this.x - 2.5 < 0 || this.x + 2.5 > this.sketch.width) this.xMult *= -1;
+    if (this.y - 2.5 < 0 || this.y + 2.5 > this.sketch.height) this.yMult *= -1;
       if (this.x - 2.5 < 0) this.x = 2.5
-      if (this.x + 2.5 > sketch.width) this.x = sketch.width - 2.5
+      if (this.x + 2.5 > this.sketch.width) this.x = this.sketch.width - 2.5
       if (this.y - 2.5 < 0) this.y = 2.5
-      if (this.y + 2.5 > sketch.height) this.y = sketch.height - 2.5
+      if (this.y + 2.5 > this.sketch.height) this.y = this.sketch.height - 2.5
   }
   isWithin(range, other) {
       if (Math.abs(this.x - other.x) > range || Math.abs(this.y - other.y) > range) return false
@@ -87,10 +96,15 @@ class Person {
   }
   data() {
     let data = {
-      n: this.id
+      // n: this.id
     }
     if (this.isInfected) data.i = 1;
     if (this.isImmune()) data.m = 1;
-    return data;
+    if (this.isHospitalized) data.h = 1;
+    if (this.seriouslyIll) data.s = 1;
+    return (JSON.stringify(data) === "{}" ? null : data);
+  }
+  hospitalize() {
+    this.beingHospitalized = true;
   }
 }

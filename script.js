@@ -1,5 +1,6 @@
 let infectedColor, seriouslyIllColor, healthyColor, immuneColor;
 let people = [];
+let hospitalBedsAvailable = numHospitalBeds;
 let freezeWhileInfected = false;
 let mouseActive = false;
 let paused = false;
@@ -26,10 +27,21 @@ const mainSketch = (sketch) => {
   sketch.draw = () => {
     sketch.background(0);
     people.forEach(person => {
-        person.show(sketch);
+        if (person.beingUnhospitalized) {
+          person.sketch = sketch;
+          hospitalBedsAvailable ++
+        }
         person.update();
-        person.wallCollision(sketch);
-        if (mouseActive && person.isWithin(mouseTransmissionRange, sketch.createVector(sketch.mouseX, sketch.mouseY)) && !person.isImmune()){ person.infect()}
+        person.wallCollision();
+        if (!person.isHospitalized)
+          person.show();
+        if (mouseActive && person.isWithin(mouseTransmissionRange, sketch.createVector(sketch.mouseX, sketch.mouseY)) && !person.isImmune()){
+          person.infect()
+          if (hospitalBedsAvailable > 0 && person.seriouslyIll) {
+            hospitalBedsAvailable --;
+            person.hospitalize();
+          }
+        }
     })
     sketch.fill(140)
     if (mouseActive) {sketch.ellipse(sketch.mouseX, sketch.mouseY, 2*mouseTransmissionRange, 2*mouseTransmissionRange)}
@@ -40,8 +52,14 @@ const mainSketch = (sketch) => {
       let healthyPeople = people.filter(person => !person.isInfected)
       infectedPeople.forEach(infectedPerson => {
         healthyPeople.forEach(person => {
-          if ((infectedPerson.isWithin(transmissionRange, person) && sketch.random(1) <= transmissionRate && !person.isInfected && !person.isImmune())) 
+          if ((infectedPerson.isWithin(transmissionRange, person) && sketch.random(1) <= transmissionRate && !person.isInfected && !person.isImmune())) {
             person.infect()
+            if (hospitalBedsAvailable > 0 && person.seriouslyIll) {
+              hospitalBedsAvailable --;
+              person.hospitalize();
+            }
+          }
+            
           
        })
       
@@ -76,7 +94,13 @@ const mainSketch = (sketch) => {
       
         people[i] = new Person(i, sketch);
         if (i<numPeopleStartingImmune) people[i].frames_since_healed = 0;
-        else if (i == numPeopleStartingImmune) people[i].infect()
+        else if (i == numPeopleStartingImmune) {
+          people[i].infect()
+          if (hospitalBedsAvailable > 0 && person.seriouslyIll) {
+            hospitalBedsAvailable --;
+            person.hospitalize();
+          }
+        }
       } 
     } else if (sketch.key === "z") {
       people = [];
@@ -91,6 +115,10 @@ const mainSketch = (sketch) => {
         let random_num = Math.floor(Math.random() * people.length);
         if (!people[random_num].isInfected) {
           people[Math.floor(Math.random() * people.length)].infect();
+          if (hospitalBedsAvailable > 0 && person.seriouslyIll) {
+            hospitalBedsAvailable --;
+            person.hospitalize();
+          }
           hasInfected = true;
         }
       }
@@ -110,6 +138,18 @@ function hospitalSketch(sketch) {
   }
   sketch.draw = () => {
     sketch.background(0)
+    for (person of people) {
+      if (person.beingHospitalized) {
+        person.x = sketch.map(person.x, 0, person.sketch.width, 0, sketch.width)
+        person.y = sketch.map(person.y, 0, person.sketch.height, 0, sketch.height)
+        person.sketch = sketch;
+        person.isHospitalized = true;
+        person.beingHospitalized = false;
+        
+      } else if (person.isHospitalized) {
+        person.show()
+      }
+    }
   }
 }
 new p5(hospitalSketch);
